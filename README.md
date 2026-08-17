@@ -1,5 +1,9 @@
 # YipYip
 
+[![CI](https://github.com/atakansavas/YipYip/actions/workflows/ci.yml/badge.svg)](https://github.com/atakansavas/YipYip/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![Platform: macOS 14+](https://img.shields.io/badge/Platform-macOS%2014%2B-lightgrey)
+
 A local-first clipboard manager for macOS. Everything you copy stays on your Mac —
 encrypted, searchable, and one keystroke away.
 
