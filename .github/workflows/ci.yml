@@ -13,7 +13,9 @@ concurrency:
 jobs:
   test:
     name: Build and test
-    runs-on: macos-14
+    # macos-14 images ship Swift 5.10, which cannot read a tools-version 6.0
+    # manifest. macos-15 ships Swift 6.
+    runs-on: macos-15
 
     steps:
       - uses: actions/checkout@v4
