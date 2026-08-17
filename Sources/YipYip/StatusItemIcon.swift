@@ -8,10 +8,13 @@ enum StatusItemIcon {
     /// Menu bar icons are laid out in an 18pt square.
     private static let side: CGFloat = 18
 
+    // NSImage is not Sendable, so these have to belong to an actor to be shared
+    // safely. The status item is main-actor work anyway; the drawing helpers
+    // below stay non-isolated so they can run inside NSImage's drawing handler.
     /// Outline glyph — the resting state.
-    static let idle: NSImage = make(filled: false)
+    @MainActor static let idle: NSImage = make(filled: false)
     /// Solid glyph — flashed briefly when a clip is captured.
-    static let active: NSImage = make(filled: true)
+    @MainActor static let active: NSImage = make(filled: true)
 
     private static func make(filled: Bool) -> NSImage {
         let image = NSImage(size: NSSize(width: side, height: side), flipped: false) { _ in
