@@ -1,0 +1,58 @@
+# Security Policy
+
+## Reporting a vulnerability
+
+Please report security issues privately through
+[GitHub Security Advisories](https://github.com/atakansavas/YipYip/security/advisories/new)
+rather than in a public issue. Include what an attacker gains, and the steps to
+reproduce it.
+
+This is a personal project maintained in spare time, so there is no guaranteed
+response window — but reports are read and taken seriously.
+
+## What YipYip protects, and what it does not
+
+A clipboard manager stores everything you copy. Being honest about the boundary
+matters more than a long list of claims.
+
+**Protected**
+
+- Clip contents are encrypted with AES-256-GCM (CryptoKit) before being written
+  to disk. The key is generated locally, stored in the macOS Keychain
+  (`com.benatakan.yipyip.encryption-key`, `WhenUnlockedThisDeviceOnly`), and never
+  leaves the machine.
+- No account, sync, or telemetry exists. The only outbound request possible is
+  the opt-in update check, which sends no data beyond a version number in the
+  User-Agent.
+- Exported files contain metadata only — previews and timestamps, never
+  encrypted contents.
+
+**Not protected**
+
+- **Previews are stored in the clear.** Search needs them, so the first 500
+  characters of each clip are readable in the database without the key. Treat
+  the history file as sensitive.
+- **Everything is captured, including secrets.** Passwords copied from a password
+  manager land in history like anything else. YipYip does not currently honour
+  the `org.nspasteboard.ConcealedType` convention that lets an app mark a clip as
+  secret — if you want that, it is a welcome contribution.
+- **Any process running as your user can read the Keychain key** once you have
+  approved access, and can read the database file. YipYip does not defend against
+  malware already running as you.
+- **The app is not sandboxed**, because pasting into other apps requires
+  Accessibility and posting synthetic events.
+
+## Permissions and why they are needed
+
+| Permission    | Used for                                                        |
+|---------------|-----------------------------------------------------------------|
+| Keychain      | Storing and reading the encryption key.                         |
+| Accessibility | Posting a synthetic ⌘V so a selected clip lands at your cursor. |
+
+If you deny Accessibility, everything still works except automatic pasting.
+
+## Verifying a build
+
+YipYip ships as source. `Scripts/build-app.sh` signs with whatever code signing
+identity it finds on your machine, or ad-hoc if there is none — so the binary you
+run is the one you built. Nothing is downloaded at build time.

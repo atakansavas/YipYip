@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: macos-14
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: swift --version
+
+      - name: Build
+        run: swift build --build-tests
+
+      - name: Test
+        # The suite touches NSPasteboard, which needs a window server session;
+        # the macOS runners provide one, so no extra setup is required.
+        run: swift test
+
+      - name: Build release bundle
+        # Signs ad-hoc here: the runner has no signing identity, which is fine
+        # for checking that bundling itself still works.
+        run: |
+          swift build -c release
+          test -f .build/release/YipYip

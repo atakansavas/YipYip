@@ -1,0 +1,14 @@
+.DS_Store
+/.build
+/Packages
+xcuserdata/
+DerivedData/
+.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
+.env
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+.build/
+Package.resolved
+
+# Icon generation leftovers (AppIcon.icns itself is committed)
+*.iconset/
