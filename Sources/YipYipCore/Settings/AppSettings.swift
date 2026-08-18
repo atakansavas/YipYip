@@ -21,6 +21,10 @@ public struct AppSettings: Codable, Sendable, Equatable {
     public var soundOnCopy: Bool
     /// Plays a short chime when an item is pasted from the search panel.
     public var soundOnPaste: Bool
+    /// Skips clips an app marked as a password or as transient.
+    public var ignoreConcealedClips: Bool
+    /// Set once the welcome window has been dismissed.
+    public var hasCompletedOnboarding: Bool
 
     public enum Theme: String, Codable, Sendable, CaseIterable {
         case light
@@ -48,7 +52,9 @@ public struct AppSettings: Codable, Sendable, Equatable {
         checkForUpdates: false,
         theme: .system,
         soundOnCopy: true,
-        soundOnPaste: true
+        soundOnPaste: true,
+        ignoreConcealedClips: true,
+        hasCompletedOnboarding: false
     )
 
     public init(
@@ -60,7 +66,9 @@ public struct AppSettings: Codable, Sendable, Equatable {
         checkForUpdates: Bool = false,
         theme: Theme = .system,
         soundOnCopy: Bool = true,
-        soundOnPaste: Bool = true
+        soundOnPaste: Bool = true,
+        ignoreConcealedClips: Bool = true,
+        hasCompletedOnboarding: Bool = false
     ) {
         self.maxHistoryItems = max(10, min(maxHistoryItems, 50_000))
         self.defaultExpirationDays = max(1, min(defaultExpirationDays, 365))
@@ -71,6 +79,8 @@ public struct AppSettings: Codable, Sendable, Equatable {
         self.theme = theme
         self.soundOnCopy = soundOnCopy
         self.soundOnPaste = soundOnPaste
+        self.ignoreConcealedClips = ignoreConcealedClips
+        self.hasCompletedOnboarding = hasCompletedOnboarding
     }
 
     /// Decoded key by key so a settings file written before a field existed
@@ -96,7 +106,11 @@ public struct AppSettings: Codable, Sendable, Equatable {
             soundOnCopy: try container.decodeIfPresent(Bool.self, forKey: .soundOnCopy)
                 ?? fallback.soundOnCopy,
             soundOnPaste: try container.decodeIfPresent(Bool.self, forKey: .soundOnPaste)
-                ?? fallback.soundOnPaste
+                ?? fallback.soundOnPaste,
+            ignoreConcealedClips: try container.decodeIfPresent(Bool.self, forKey: .ignoreConcealedClips)
+                ?? fallback.ignoreConcealedClips,
+            hasCompletedOnboarding: try container.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding)
+                ?? fallback.hasCompletedOnboarding
         )
     }
 

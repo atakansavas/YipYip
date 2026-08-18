@@ -39,31 +39,70 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var flashTask: Task<Void, Never>?
     private var didReportAccessibility = false
     private var latestReleaseURL: URL?
+    private var onboardingWindow: NSWindow?
+    /// False until storage is open; menu actions are no-ops before then.
+    private var isReady = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        do {
-            let state = try AppState()
-            self.appState = state
-            setupStatusItem(state: state)
-            setupHotkey(state: state)
-            setupClipboardMonitor(state: state)
-            state.cleanupExpired()
+        // The menu bar icon appears immediately. Unlocking the encryption key can
+        // block on a Keychain dialog, so it happens off the main thread — the app
+        // stays responsive while the user answers it.
+        setupStatusItem()
 
-            if state.settings.launchAtLogin {
-                LaunchAtLoginHelper.setEnabled(true)
+        Task { @MainActor in
+            do {
+                let storage = try await Task.detached(priority: .userInitiated) {
+                    try AppState.openStorage()
+                }.value
+
+                finishLaunching(with: AppState(storage: storage))
+            } catch {
+                reportStartupFailure(error)
             }
-            checkForUpdatesIfEnabled(state: state)
-        } catch {
-            let alert = NSAlert()
-            alert.messageText = "YipYip failed to start"
-            alert.informativeText = error.localizedDescription
-            alert.alertStyle = .critical
-            alert.runModal()
-            NSApp.terminate(nil)
         }
     }
 
-    private func setupStatusItem(state: AppState) {
+    private func finishLaunching(with state: AppState) {
+        appState = state
+        isReady = true
+
+        setupHotkey(state: state)
+        setupClipboardMonitor(state: state)
+        state.cleanupExpired()
+
+        if state.settings.launchAtLogin {
+            LaunchAtLoginHelper.setEnabled(true)
+        }
+        checkForUpdatesIfEnabled(state: state)
+        refreshMenuState()
+
+        if !state.settings.hasCompletedOnboarding {
+            showOnboarding()
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: .yipYipSettingsChanged,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, let state = self.appState else { return }
+                self.setupHotkey(state: state)
+                self.clipboardMonitor?.honourExclusionMarkers = state.settings.ignoreConcealedClips
+            }
+        }
+    }
+
+    private func reportStartupFailure(_ error: Error) {
+        let alert = NSAlert()
+        alert.messageText = "YipYip failed to start"
+        alert.informativeText = error.localizedDescription
+        alert.alertStyle = .critical
+        alert.runModal()
+        NSApp.terminate(nil)
+    }
+
+    private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem.button?.image = StatusItemIcon.idle
 
@@ -125,7 +164,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Refreshes the parts of the menu that depend on live state.
     private func refreshMenuState() {
-        guard let state = appState else { return }
+        guard let state = appState else {
+            headerItem.attributedTitle = NSAttributedString(
+                string: "Starting…",
+                attributes: [
+                    .font: NSFont.systemFont(ofSize: 12, weight: .semibold),
+                    .foregroundColor: NSColor.secondaryLabelColor,
+                ]
+            )
+            return
+        }
 
         let count = (try? state.store.itemCount()) ?? state.items.count
         let pinned = (try? state.store.pinnedItems().count) ?? 0
@@ -198,6 +246,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupClipboardMonitor(state: AppState) {
         let monitor = ClipboardMonitor()
+        monitor.honourExclusionMarkers = state.settings.ignoreConcealedClips
         self.clipboardMonitor = monitor
         monitor.onChange = { [weak self, weak state] capture, sourceApp in
             guard let state else { return }
@@ -292,7 +341,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func showSearch() {
-        guard let state = appState else { return }
+        guard isReady, let state = appState else { return }
 
         let frontmost = NSWorkspace.shared.frontmostApplication
         if frontmost?.processIdentifier != ProcessInfo.processInfo.processIdentifier {
@@ -363,6 +412,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panelCloseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
             self?.dismissPanel()
         }
+    }
+
+    /// First launch only: explains the shortcut and the two permissions before
+    /// macOS asks for them out of context.
+    private func showOnboarding() {
+        guard let state = appState else { return }
+
+        let view = OnboardingView(
+            shortcut: HotkeyDescription.display(
+                keyCode: state.settings.globalHotkeyKeyCode,
+                modifiers: state.settings.globalHotkeyModifiers
+            ),
+            onOpenAccessibility: { PasteHelper.openAccessibilitySettings() },
+            onFinish: { [weak self] in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    self.appState?.settings.hasCompletedOnboarding = true
+                    self.appState?.saveSettings()
+                    self.onboardingWindow?.close()
+                    self.onboardingWindow = nil
+                }
+            }
+        )
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 520, height: 460),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.isReleasedWhenClosed = false
+        window.title = "Welcome"
+        window.titlebarAppearsTransparent = true
+        window.contentView = NSHostingView(rootView: view)
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        onboardingWindow = window
     }
 
     @objc private func showSettings() {

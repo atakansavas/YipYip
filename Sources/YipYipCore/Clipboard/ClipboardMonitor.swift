@@ -8,6 +8,8 @@ public final class ClipboardMonitor {
     private var timer: Timer?
     private var lastChangeCount: Int
     public var onChange: (@MainActor (ClipboardCapture, String?) -> Void)?
+    /// Mirrors the user's "ignore passwords" preference.
+    public var honourExclusionMarkers: Bool = true
 
     public init(pasteboard: NSPasteboard = .general) {
         self.pasteboard = pasteboard
@@ -33,7 +35,10 @@ public final class ClipboardMonitor {
         guard current != lastChangeCount else { return }
         lastChangeCount = current
 
-        guard let capture = ClipboardCapture.read(from: pasteboard) else { return }
+        guard let capture = ClipboardCapture.read(
+            from: pasteboard,
+            honourExclusionMarkers: honourExclusionMarkers
+        ) else { return }
         onChange?(capture, NSWorkspace.shared.frontmostApplication?.localizedName)
     }
 }

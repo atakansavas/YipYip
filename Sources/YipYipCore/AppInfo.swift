@@ -5,7 +5,7 @@ public enum AppInfo {
     /// The single source of truth for the version. `Scripts/build-app.sh` reads
     /// this line to stamp the bundle, and the app prefers the stamped value at
     /// runtime so a bundled build always reports what it actually shipped as.
-    static let fallbackVersion = "1.0.0"
+    static let fallbackVersion = "1.1.0"
 
     public static let name = "YipYip"
     public static let bundleIdentifier = "com.benatakan.yipyip"

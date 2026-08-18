@@ -35,23 +35,47 @@ final class AppState {
     let encryption: EncryptionManager
     let dbPath: String
 
-    init() throws {
+    /// Everything that has to happen before the UI can do anything, gathered off
+    /// the main thread.
+    struct Storage: Sendable {
+        let dbPath: String
+        let encryption: EncryptionManager
+        let store: ClipboardStore
+        let settingsManager: SettingsManager
+        let settings: AppSettings
+    }
+
+    /// Opens the database and unlocks the encryption key.
+    ///
+    /// Deliberately not on the main actor: reading the Keychain can put a system
+    /// dialog on screen and block until the user answers it. Doing that during
+    /// `applicationDidFinishLaunching` froze the whole app — no icon, no menu,
+    /// no clipboard polling — and looked like a crash.
+    nonisolated static func openStorage() throws -> Storage {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
             .appendingPathComponent("YipYip", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
         let path = dir.appendingPathComponent("yipyip.db").path
-        self.dbPath = path
+        let encryption = try EncryptionManager(keychainManager: KeychainManager())
+        let store = try ClipboardStore(db: try SQLiteDatabase(path: path), encryption: encryption)
+        let settingsManager = SettingsManager(directory: dir)
 
-        let keychain = KeychainManager()
-        let enc = try EncryptionManager(keychainManager: keychain)
-        self.encryption = enc
+        return Storage(
+            dbPath: path,
+            encryption: encryption,
+            store: store,
+            settingsManager: settingsManager,
+            settings: (try? settingsManager.load()) ?? .default
+        )
+    }
 
-        let db = try SQLiteDatabase(path: path)
-        self.store = try ClipboardStore(db: db, encryption: enc)
-
-        self.settingsManager = SettingsManager(directory: dir)
-        self.settings = (try? settingsManager.load()) ?? .default
+    init(storage: Storage) {
+        self.dbPath = storage.dbPath
+        self.encryption = storage.encryption
+        self.store = storage.store
+        self.settingsManager = storage.settingsManager
+        self.settings = storage.settings
 
         refreshItems()
         refreshPinboards()
@@ -294,4 +318,10 @@ final class AppState {
     var selectedItem: ClipboardItem? {
         items.indices.contains(selectedIndex) ? items[selectedIndex] : nil
     }
+}
+
+extension Notification.Name {
+    /// Posted when a setting changes that the app layer has to act on — the
+    /// global shortcut, or what the clipboard monitor should ignore.
+    static let yipYipSettingsChanged = Notification.Name("com.benatakan.yipyip.settingsChanged")
 }

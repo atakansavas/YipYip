@@ -25,12 +25,35 @@ struct SettingsView: View {
                 )
             }
 
+            Section("Shortcut") {
+                LabeledContent("Open search") {
+                    HotkeyRecorder(
+                        keyCode: $state.settings.globalHotkeyKeyCode,
+                        modifiers: $state.settings.globalHotkeyModifiers,
+                        onChange: { NotificationCenter.default.post(name: .yipYipSettingsChanged, object: nil) }
+                    )
+                }
+                Text("⌘⌥V shadows Finder's \"Move Item Here\" while YipYip is running.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Appearance") {
                 Picker("Theme", selection: $state.settings.theme) {
                     ForEach(AppSettings.Theme.allCases, id: \.self) { theme in
                         Text(theme.rawValue.capitalized).tag(theme)
                     }
                 }
+            }
+
+            Section("Privacy") {
+                Toggle("Ignore passwords and transient clips", isOn: $state.settings.ignoreConcealedClips)
+                    .onChange(of: state.settings.ignoreConcealedClips) { _, _ in
+                        NotificationCenter.default.post(name: .yipYipSettingsChanged, object: nil)
+                    }
+                Text("Skips clips that password managers and similar apps mark as secret.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Sound") {
