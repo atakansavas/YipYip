@@ -55,30 +55,14 @@ jobs:
 
           # The tag may be pushed before a release exists for it.
           if ! gh release view "$TAG" --repo "$REPO" > /dev/null 2>&1; then
-            gh release create "$TAG" --repo "$REPO" \
-              --title "YipYip ${TAG#v}" --generate-notes
+            gh release create "$TAG" --repo "$REPO" --title "YipYip ${TAG#v}" --generate-notes
           fi
 
           gh release upload "$TAG" .build/YipYip.zip --clobber --repo "$REPO"
 
+          # Explain the Gatekeeper warning once, on whatever notes exist.
           gh release view "$TAG" --repo "$REPO" --json body --jq .body > notes.md
-          if ! grep -q "quarantine" notes.md; then
-            cat >> notes.md <<'NOTE'
-
----
-
-**About the attached `YipYip.zip`:** it is ad-hoc signed by CI, not notarized, so
-macOS quarantines it on download. Either build from source (recommended):
-
-```bash
-git clone https://github.com/atakansavas/YipYip.git && cd YipYip && ./Scripts/build-app.sh
-```
-
-or clear the quarantine flag yourself after unzipping:
-
-```bash
-xattr -dr com.apple.quarantine /Applications/YipYip.app
-```
-NOTE
+          if ! grep -q quarantine notes.md; then
+            cat .github/release-binary-note.md >> notes.md
             gh release edit "$TAG" --repo "$REPO" --notes-file notes.md
           fi
