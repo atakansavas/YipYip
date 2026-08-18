@@ -1,163 +1,174 @@
 # YipYip
 
-[![CI](https://github.com/atakansavas/YipYip/actions/workflows/ci.yml/badge.svg)](https://github.com/atakansavas/YipYip/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Platform: macOS 14+](https://img.shields.io/badge/Platform-macOS%2014%2B-lightgrey)
+**Kopyaladığın her şeyi hatırlar. Sen unutursun, o unutmaz.**
 
-A local-first clipboard manager for macOS. Everything you copy stays on your Mac —
-encrypted, searchable, and one keystroke away.
+![Lisans](https://img.shields.io/badge/Lisans-MIT-blue) ![macOS](https://img.shields.io/badge/macOS-14%2B-lightgrey) ![Fiyat](https://img.shields.io/badge/Fiyat-bedava-brightgreen) ![Reklam](https://img.shields.io/badge/Reklam-yok-ff69b4)
 
-<!-- Screenshot: add docs/search-panel.png and reference it here -->
+<!-- Ekran görüntüsü: ./Scripts/capture-screenshot.sh -->
 
-**Requirements:** macOS 14+, Swift 6 (`xcode-select --install`).
+---
 
-## Install
+## Şöyle bir şey yaşadın mı?
+
+Bir link kopyaladın. Sonra "dur bir şuna bakayım" dedin, başka bir şey kopyaladın.
+Sonra o ilk link... gitti. Yok. Buhar oldu. Nereye gitti? Kimse bilmiyor.
+Pano dediğin şey, kafasında tek bir düşünce tutabilen bir arkadaş gibidir.
+
+**YipYip o arkadaşın hafıza kartı takılmış hâli.**
+
+Kopyaladığın her şeyi kenara not eder, sen isteyince önüne serer, "hangisiydi?"
+diye düşünmene bile gerek kalmadan aratır. Üstelik hepsini kendi bilgisayarında
+tutar — dedikoducu değildir, kimseye anlatmaz.
+
+---
+
+## Nasıl kullanılır? (üç adım, bitti)
+
+**1.** Bir şey kopyala. Ne olursa. Link, şifre değil ama, metin, fotoğraf, dosya, video.
+
+**2.** Sonra bir ara `⌘⌥V` bas. (Yani Command + Option + V. Aynı anda. Evet, üç parmak. Yaparsın.)
+
+**3.** Arama kutusuna aklında kalan neyse onu yaz, Enter'a bas. Kopyaladığın şey,
+imlecin nerede duruyorsa oraya iner. Sen hiçbir şey yapmazsın. O halleder.
+
+Aklında sadece "yatırım" kelimesi mi kaldı? Yaz gitsin. Türkçe karakter derdi de yok:
+**"insallah" yazarsan "inşallah"ı bulur.** Klavye ayarı, şapka, nokta derdi yok.
+"gunes" yaz, "güneş"i getirir. "istanbul" yaz, "İSTANBUL"u getirir. Anlaşıyoruz yani.
+
+---
+
+## Kurulum
+
+Korkma, üç satır. Terminal'i aç (Spotlight'a "Terminal" yaz, Enter) ve şunları
+sırayla yapıştır:
 
 ```bash
 git clone https://github.com/atakansavas/YipYip.git
 cd YipYip
 ./Scripts/build-app.sh
+```
+
+Bir şeyler akmaya başlayacak. Panik yok, o normal. Bilgisayar çalışıyor,
+"acaba bir şey mi bozdum" diye düşünme.
+
+İşi bitince:
+
+```bash
 open /Applications/YipYip.app
 ```
 
-The script builds a release binary, assembles `YipYip.app`, signs it with a code
-signing identity if one is available, and installs it to `/Applications`.
+Menü çubuğunun sağ üst köşesinde küçük bir pano ikonu belirecek. **Tebrikler,
+artık hafızan var.**
 
-Then press `⌘⌥V` and start copying.
+> Not: Bunun için Mac'inde geliştirici araçları lazım. Yoksa terminal sana zaten
+> "yükleyeyim mi?" diye soracak, "evet" de, gerisi kendiliğinden olur.
 
-## Permissions
+---
 
-macOS asks for two things, both just in time:
+## İlk açılışta macOS iki soru soracak
 
-| Permission    | Why                                                                                                                  |
-|---------------|----------------------------------------------------------------------------------------------------------------------|
-| Keychain      | Stores the AES-256 key that encrypts your history. Choose **Always Allow** — the app waits on this dialog at launch.  |
-| Accessibility | Lets YipYip paste into the app you were using. Without it the clip is still copied and you press ⌘V yourself.        |
+Apple temkinlidir, her yeni tanıdığını sorgular. İkisi de zararsız:
 
-If auto-paste stops working after rebuilding, the grant went stale because the
-code signature changed. Clear it and approve once more:
+**1. "YipYip anahtarlığındaki bilgiye erişmek istiyor"**
+→ **"Her Zaman İzin Ver"** de.
+Bu, geçmişini kilitleyen anahtarın kasası. YipYip kendi kasasının anahtarını
+istiyor, senin banka şifreni değil. Bu izni vermezsen uygulama kapıda öylece bekler.
 
-```bash
-tccutil reset Accessibility com.benatakan.yipyip
-```
+**2. Erişilebilirlik (Accessibility) izni**
+→ Ver gitsin.
+Bu izin olmadan da her şey çalışır ama seçtiğin şeyi imlecine kendisi yapıştıramaz,
+sen `⌘V` yapmak zorunda kalırsın. Yani bir tuş fazla basarsın. Dünyanın sonu değil
+ama neden?
 
-Nothing else is requested — no contacts, location, camera, or microphone.
+---
 
-## Features
+## Neler var içinde?
 
-- **Encrypted history** — every clip is AES-256-GCM encrypted with a key kept in the macOS Keychain.
-- **Instant search** — `⌘⌥V` from anywhere. Arrow keys navigate, Enter pastes into the app you came from, Escape closes.
-- **Diacritic-insensitive search** — `insallah` finds `inşallah`, `istanbul` finds `İSTANBUL`, `gunes` finds `güneş`, and the reverse.
-- **Images and files** — images are stored as PNG and shown as thumbnails; files (including videos) are stored as references with their Finder icon, so a 4 GB video costs a few bytes. Pasting restores the original form, not a text stand-in.
-- **Pinboards** — pin the clips you keep reaching for into named collections.
-- **No duplicates, no burying** — re-copying something already in history moves it back to the top instead of adding a second row.
-- **Sound cues** — soft synthesised tones on capture and paste, each switchable.
-- **Auto-expiration** — clips expire after a configurable number of days (default: 30).
-- **Skips secrets** — clips a password manager marks as concealed (or transient) are not recorded. Switchable in Settings.
-- **Export** — history metadata and settings as JSON, from the menu bar or Settings.
+**Fotoğraf da hatırlar, dosya da.** Ekran görüntüsü aldın mı listede küçük hâlini
+görürsün. Video kopyaladıysan onu da tutar — hem de videoyu kopyalamadan, sadece
+"şuradaydı" diye not alarak. 4 GB'lık film geçmişinde birkaç harflik yer kaplar.
+Zeki çocuk.
 
-## Keyboard Shortcuts
+**Aynı şeyi tekrar kopyalarsan** listede iki tane olmaz, olan en üste zıplar.
+"Ben bunu kopyalamıştım ya, hani nerede?" — burada, en üstte.
 
-| Key       | Action                   |
-|-----------|--------------------------|
-| `⌘⌥V`     | Toggle the search window (configurable) |
-| `↑` / `↓` | Navigate items           |
-| `↩`       | Paste selected at cursor |
-| `⌘P`      | Pin selected item        |
-| `⌘⌫`      | Delete selected item     |
-| `Tab`     | Switch All / Pinned      |
-| `Esc`     | Close                    |
+**İşine yarayanları asabilirsin.** `⌘P` ile bir klibi panoya asarsın, o artık
+kaybolmaz. Sık kullandığın adres, kod, o bir türlü ezberleyemediğin IBAN...
+Panolar oluşturup gruplayabilirsin de.
 
-`⌘⌥V` shadows Finder's "Move Item Here" while YipYip runs. Settings ▸ Shortcut
-records a different combination — click the field and press one.
+**Şifrelerine bulaşmaz.** Şifre yöneticinden bir şifre kopyaladığında YipYip
+başını çevirir, görmezden gelir, kaydetmez. Centilmen adamdır.
 
-## Privacy
+**Ses çıkarır.** Kopyalayınca hafif bir "tink", yapıştırınca "tin-tin". Rahatsız
+edici alarm sesleri değil, yumuşak şeyler. Sinirini bozarsa ayarlardan kapatırsın,
+gücenmez.
 
-YipYip is offline by default:
+**Eskiyenleri kendi temizler.** 30 gün sonra kimsenin umurunda olmayan klipler
+sessizce gider. Ne kadar dursun istersen ayarlardan söylersin.
 
-- Clipboard content never leaves your Mac. No account, no sync, no telemetry.
-- History lives in `~/Library/Application Support/YipYip/yipyip.db`, encrypted with a Keychain-held key.
-- The **only** network request the app can make is the opt-in update check, which asks the GitHub Releases API for a version number. It is off unless you enable it.
-- Export writes metadata only — previews and timestamps, never encrypted contents.
+---
 
-Worth knowing: previews are stored unencrypted so search can work, so treat the
-history file as sensitive and use **Clear All History** when you need to. Clips
-an app marks as concealed (the `org.nspasteboard.ConcealedType` convention most
-password managers follow) are skipped, but an app that does not set the marker
-will still be recorded.
+## Kısayollar
 
-## Data Location
+| Basacağın tuş | Olacak şey |
+|---|---|
+| `⌘⌥V` | Pencereyi aç (istersen değiştirirsin) |
+| `↑` `↓` | Listede gez |
+| `↩` | Seçtiğini imlecine yapıştır |
+| `⌘P` | Bunu asayım, lazım olacak |
+| `⌘⌫` | Bunu görmek istemiyorum |
+| `Tab` | Hepsi ↔ Asılanlar |
+| `Esc` | Boş ver, kapat |
 
-| What           | Where                                                            |
-|----------------|------------------------------------------------------------------|
-| History        | `~/Library/Application Support/YipYip/yipyip.db`                  |
-| Settings       | `~/Library/Application Support/YipYip/settings.json`              |
-| Encryption key | macOS Keychain, service `com.benatakan.yipyip.encryption-key`     |
+`⌘⌥V` sana uymadıysa Ayarlar ▸ Shortcut'a gir, kutucuğa tıkla, canın ne isterse ona bas.
 
-## Architecture
+---
 
-```
-Sources/
-├── YipYip/                  # App layer (SwiftUI + AppKit)
-│   ├── App.swift            # Entry point, status item, menu, search panel
-│   ├── AppState.swift       # Observable state bridging core → UI
-│   ├── HotkeyManager.swift  # Global ⌘⌥V via the Carbon API
-│   ├── PasteHelper.swift    # Refocuses the previous app and sends ⌘V
-│   ├── SoundPlayer.swift    # Plays the synthesised cues
-│   ├── StatusItemIcon.swift # Hand-drawn menu bar glyph
-│   └── Views/               # Search panel, rows, settings, pinboard sheet
-└── YipYipCore/              # Business logic library (no UI imports)
-    ├── Audio/               # Cue synthesis
-    ├── Clipboard/           # Pasteboard capture and restore
-    ├── Database/            # SQLite storage
-    ├── Export/              # JSON export and diagnostics
-    ├── Pinboard/            # Named pinboard helpers
-    ├── Search/              # Diacritic folding
-    ├── Security/            # AES-256-GCM and Keychain
-    ├── Settings/            # Preferences
-    └── Update/              # Opt-in release check
-```
+## "Peki benim verilerim?"
 
-No third-party dependencies — only system frameworks: `AppKit`, `SwiftUI`,
-`CryptoKit`, `Security`, `SQLite3`, `Carbon`, `AVFoundation`, `ServiceManagement`.
+Senin bilgisayarında. Sadece orada. Başka hiçbir yerde.
 
-Keeping the core free of UI imports is what makes it testable: the suite covers
-capture classification, encryption, storage, search folding, settings migration,
-tone synthesis, and the update check, with no app running.
+Hesap yok, üyelik yok, "kaydolun" ekranı yok, bulut yok, senkronizasyon yok,
+"deneyiminizi iyileştirmek için veri topluyoruz" yok. İnternete tek bir şey için
+çıkar, o da **sen açarsan**: yeni sürüm var mı diye bakmak. Onu da kapalı bırakırsan
+YipYip ömrü boyunca internetin yüzünü görmez.
 
-## Development
+Kopyaladıkların şifrelenerek saklanır. Yani birisi bilgisayarındaki dosyayı açıp
+okumaya kalksa karşısına anlamsız harfler çıkar.
 
-```bash
-swift build                                  # debug build
-swift test                                   # run the suite
-./Scripts/build-app.sh                       # release build, bundle, sign, install
-swift Scripts/generate-icon.swift Resources  # regenerate the app icon
-./Scripts/capture-screenshot.sh              # capture the README screenshot
-```
+---
 
-The version has a single source of truth: `fallbackVersion` in
-`Sources/YipYipCore/AppInfo.swift`, which `Scripts/build-app.sh` reads to stamp
-the bundle.
+## Sıkça sorulan (ve sorulmayan) sorular
 
-## Not planned
+**Kaç tane şey hatırlıyor?**
+1000. Yetmezse arttırırsın. 50.000'e kadar çıkar ama o noktada belki sorun panoda değildir.
 
-Cloud sync, accounts, telemetry, an extension marketplace, script execution.
-YipYip is meant to stay a small local tool.
+**Bilgisayarımı yavaşlatır mı?**
+Hayır. Menü çubuğunda oturur, sessiz sakin bekler.
 
-## Uninstall
+**Adı neden YipYip?**
+Kısa. Sevimli. Yazması kolay. Daha iyi bir açıklama arıyorsan yok.
+
+**Bedava mı? Sonradan para isteyecek misin?**
+Bedava. Kodu ortada, istersen okursun, istersen değiştirirsin.
+
+**Bozulursa?**
+[Buradan derdini anlat](https://github.com/atakansavas/YipYip/issues). Bakarız.
+
+---
+
+## Ayrılık vakti (olmasın ama)
+
+Beğenmedin mi? Kırgınlık yok:
 
 ```bash
 killall YipYip
 rm -rf /Applications/YipYip.app
 rm -rf ~/Library/Application\ Support/YipYip
-security delete-generic-password -s com.benatakan.yipyip.encryption-key
 ```
 
-## Contributing
+Her şeyi silip gider. Arkasından bakmaz.
 
-Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
-For anything security-related, read [SECURITY.md](SECURITY.md) first.
+---
 
-## License
-
-[MIT](LICENSE) © Atakan Savaş
+<sub>MIT lisansı · Atakan Savaş · Kodun içine bakmak isteyenlere: [teknik notlar](docs/TECHNICAL.md) · [katkı](CONTRIBUTING.md)</sub>

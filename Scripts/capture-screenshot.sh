@@ -48,7 +48,7 @@ echo "==> Wrote docs/search-panel.png"
 
 # Swap the README placeholder for the real image the first time round.
 README="${PROJECT_DIR}/README.md"
-PLACEHOLDER='<!-- Screenshot: add docs/search-panel.png and reference it here -->'
+PLACEHOLDER='<!-- Ekran görüntüsü: ./Scripts/capture-screenshot.sh -->'
 if grep -qF "$PLACEHOLDER" "$README"; then
     python3 - "$README" "$PLACEHOLDER" <<'PY'
 import sys
