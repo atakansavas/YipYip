@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to attach the build to
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  bundle:
+    name: Build and attach app bundle
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test
+        run: swift test
+
+      - name: Build app bundle
+        # No signing identity on the runner, so this is ad-hoc signed. Gatekeeper
+        # will quarantine the download; the release notes tell people how to
+        # clear it, and building from source stays the recommended path.
+        env:
+          YIPYIP_SKIP_INSTALL: "1"
+        run: ./Scripts/build-app.sh
+
+      - name: Verify the version matches the tag
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          PLIST=".build/YipYip.app/Contents/Info.plist"
+          BUILT=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$PLIST")
+          if [[ "v$BUILT" != "$TAG" ]]; then
+            echo "Tag $TAG does not match AppInfo version $BUILT" >&2
+            exit 1
+          fi
+
+      - name: Zip
+        run: |
+          cd .build
+          ditto -c -k --keepParent YipYip.app YipYip.zip
+
+      - name: Publish and attach
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+
+          # The tag may be pushed before a release exists for it.
+          if ! gh release view "$TAG" --repo "$REPO" > /dev/null 2>&1; then
+            gh release create "$TAG" --repo "$REPO" \
+              --title "YipYip ${TAG#v}" --generate-notes
+          fi
+
+          gh release upload "$TAG" .build/YipYip.zip --clobber --repo "$REPO"
+
+          gh release view "$TAG" --repo "$REPO" --json body --jq .body > notes.md
+          if ! grep -q "quarantine" notes.md; then
+            cat >> notes.md <<'NOTE'
+
+---
+
+**About the attached `YipYip.zip`:** it is ad-hoc signed by CI, not notarized, so
+macOS quarantines it on download. Either build from source (recommended):
+
+```bash
+git clone https://github.com/atakansavas/YipYip.git && cd YipYip && ./Scripts/build-app.sh
+```
+
+or clear the quarantine flag yourself after unzipping:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/YipYip.app
+```
+NOTE
+            gh release edit "$TAG" --repo "$REPO" --notes-file notes.md
+          fi

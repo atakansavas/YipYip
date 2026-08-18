@@ -87,6 +87,13 @@ else
     codesign --force --sign - --identifier "com.benatakan.yipyip" "$APP_BUNDLE"
 fi
 
+# CI builds the bundle to attach it to a release; installing would make no sense
+# there, and would fail without /Applications write access.
+if [[ "${YIPYIP_SKIP_INSTALL:-0}" == "1" ]]; then
+    echo "==> Bundle ready: ${APP_BUNDLE} (install skipped)"
+    exit 0
+fi
+
 # Install to /Applications — quit running instance first if present.
 echo "==> Installing to ${INSTALL_DIR}..."
 if pgrep -x "$APP_NAME" > /dev/null 2>&1; then

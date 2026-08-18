@@ -53,13 +53,14 @@ Nothing else is requested — no contacts, location, camera, or microphone.
 - **No duplicates, no burying** — re-copying something already in history moves it back to the top instead of adding a second row.
 - **Sound cues** — soft synthesised tones on capture and paste, each switchable.
 - **Auto-expiration** — clips expire after a configurable number of days (default: 30).
+- **Skips secrets** — clips a password manager marks as concealed (or transient) are not recorded. Switchable in Settings.
 - **Export** — history metadata and settings as JSON, from the menu bar or Settings.
 
 ## Keyboard Shortcuts
 
 | Key       | Action                   |
 |-----------|--------------------------|
-| `⌘⌥V`     | Toggle the search window |
+| `⌘⌥V`     | Toggle the search window (configurable) |
 | `↑` / `↓` | Navigate items           |
 | `↩`       | Paste selected at cursor |
 | `⌘P`      | Pin selected item        |
@@ -67,9 +68,8 @@ Nothing else is requested — no contacts, location, camera, or microphone.
 | `Tab`     | Switch All / Pinned      |
 | `Esc`     | Close                    |
 
-`⌘⌥V` shadows Finder's "Move Item Here" while YipYip runs. There is no picker for
-it yet; the combination lives in `settings.json` as `globalHotkeyKeyCode` and
-`globalHotkeyModifiers` (Carbon modifier masks).
+`⌘⌥V` shadows Finder's "Move Item Here" while YipYip runs. Settings ▸ Shortcut
+records a different combination — click the field and press one.
 
 ## Privacy
 
@@ -80,9 +80,11 @@ YipYip is offline by default:
 - The **only** network request the app can make is the opt-in update check, which asks the GitHub Releases API for a version number. It is off unless you enable it.
 - Export writes metadata only — previews and timestamps, never encrypted contents.
 
-Worth knowing: everything you copy is captured, including passwords copied out of
-a password manager. Previews are stored unencrypted so search can work, so treat
-the history as sensitive and use **Clear All History** when you need to.
+Worth knowing: previews are stored unencrypted so search can work, so treat the
+history file as sensitive and use **Clear All History** when you need to. Clips
+an app marks as concealed (the `org.nspasteboard.ConcealedType` convention most
+password managers follow) are skipped, but an app that does not set the marker
+will still be recorded.
 
 ## Data Location
 
@@ -130,6 +132,7 @@ swift build                                  # debug build
 swift test                                   # run the suite
 ./Scripts/build-app.sh                       # release build, bundle, sign, install
 swift Scripts/generate-icon.swift Resources  # regenerate the app icon
+./Scripts/capture-screenshot.sh              # capture the README screenshot
 ```
 
 The version has a single source of truth: `fallbackVersion` in
